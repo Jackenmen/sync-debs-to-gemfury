@@ -51,7 +51,12 @@ class App:
             cls = get_package_cls(package_data["type"])
             self.packages.append(cls(package_name, package_data["config"]))
 
+    def _create_directories(self) -> None:
+        for dirname in ("debs", "package_versions"):
+            os.makedirs(dirname, exist_ok=True)
+
     def run(self) -> int:
+        self._create_directories()
         self._load_packages()
         changed_packages: list[Package] = []
 
