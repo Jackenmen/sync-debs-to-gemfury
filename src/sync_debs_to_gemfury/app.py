@@ -62,14 +62,14 @@ class App:
 
         for package in self.packages:
             try:
-                deb_file = package.download_deb()
+                package.download_deb()
             except (RuntimeError, requests.HTTPError) as exc:
                 print(f"{package.name}: {exc}", file=sys.stderr)
                 self.errored = True
                 continue
 
             previous_version = package.get_previous_version()
-            if deb_file.version == previous_version:
+            if package.deb_file.version == previous_version:
                 continue
 
             try:
