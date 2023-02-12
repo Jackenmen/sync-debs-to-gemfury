@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=64.0", "setuptools_scm[toml]>=7.0.5"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sync-debs-to-gemfury"
+dependencies = [
+    "requests",
+    "strictyaml",
+]
+requires-python = ">=3.11"
+dynamic = ["version"]
+
+[project.scripts]
+sync-debs-to-gemfury = "sync_debs_to_gemfury.__main__:main"
+
+[tool.setuptools_scm]
+git_describe_command = "git describe --dirty --tags --long --exclude v[0-9]*"
+
+[tool.isort]
+profile = "black"
+line_length = 88
+skip_gitignore = true
+atomic = true
+
+[tool.ruff]
+target-version = "py311"
+select = ["E", "F", "I001", "PGH004"]
+fix = true
+fixable = ["I001"]
+isort.combine-as-imports = true
+isort.known-first-party = ["sync_debs_to_gemfury"]
+force-exclude = true

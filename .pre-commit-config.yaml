@@ -1,0 +1,40 @@
+default_language_version:
+  python: python3.11
+exclude: ^tests/data/
+repos:
+  - repo: https://github.com/psf/black
+    rev: '23.1.0'
+    hooks:
+      - id: black
+  - repo: https://github.com/Pierre-Sassoulas/black-disable-checker
+    rev: 'v1.1.3'
+    hooks:
+      - id: black-disable-checker
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.245'
+    hooks:
+      - id: ruff
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: end-of-file-fixer
+        # po files are auto-generated so let's not touch them
+        exclude_types: [pofile]
+
+      # Trailing whitespace is evil
+      - id: trailing-whitespace
+
+      # Syntax validation
+      - id: check-ast
+      - id: check-toml
+      # can be switched to yamllint when this issue gets resolved:
+      # https://github.com/adrienverge/yamllint/issues/238
+      - id: check-yaml
+
+      # Checks for git-related issues
+      - id: check-case-conflict
+      - id: check-merge-conflict
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-blanket-noqa

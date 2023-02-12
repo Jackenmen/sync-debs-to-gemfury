@@ -1,0 +1,2 @@
+# include commit/tag information in `.git_archival.txt` when packing with git-archive
+.git_archival.txt export-subst

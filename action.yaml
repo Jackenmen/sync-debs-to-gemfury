@@ -1,0 +1,31 @@
+name: Synchronize deb packages to Gemfury repository.
+author: Jakub Kuczys
+description: >-
+  Synchronize deb packages to Gemfury repository.
+  Useful for debs that aren't distributed through an apt repository.
+branding:
+  color: blue
+  icon: download
+runs:
+  using: composite
+  steps:
+    - name: Checkout the repository.
+      uses: actions/checkout@v3
+
+    - name: Setup Python for the action.
+      id: python-for-action
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        update-environment: false
+
+    - name: Run the action.
+      run: >-
+        pipx run
+        --python '${{ steps.python-for-action.outputs.python-path }}'
+        --spec '${{ github.action_path }}'
+        sync-debs-to-gemfury
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
