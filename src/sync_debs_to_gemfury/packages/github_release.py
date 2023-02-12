@@ -34,7 +34,7 @@ class GitHubReleasePackage(Package):
 
         resp = requests.get(valid_assets[0], stream=True)
         resp.raise_for_status()
-        with open(self.deb_file.path, "rb") as fp:
+        with open(self.deb_file.path, "wb") as fp:
             for chunk in resp.iter_content(None):
                 fp.write(chunk)
 

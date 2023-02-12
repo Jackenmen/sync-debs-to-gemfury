@@ -39,7 +39,7 @@ class Package(metaclass=abc.ABCMeta):
 
     def save_version(self) -> None:
         path = os.path.join("package_versions", self.name)
-        with open(path, encoding="utf-8") as fp:
+        with open(path, "w", encoding="utf-8") as fp:
             fp.write(f"{self.deb_file.version}\n")
 
     def push_to_gemfury(self, username: str, push_token: str) -> None:
