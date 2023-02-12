@@ -1,10 +1,10 @@
 import typing
 
-from strictyaml import Map, MapPattern, Optional, Str, load as yaml_load
+from strictyaml import EmptyDict, Map, MapPattern, Optional, Str, load as yaml_load
 
 PACKAGE_KEYS = {
     "type": Str(),
-    Optional("config", default={}): MapPattern(Str(), Str()),
+    Optional("config", default={}): EmptyDict() | MapPattern(Str(), Str()),
 }
 
 SCHEMA = Map(
