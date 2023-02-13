@@ -13,11 +13,15 @@ import requests
 
 class DebInfoDict(TypedDict):
     version: str
+    version_counter: int
     hashes: dict[str, str]
 
 
 class DebInfo(metaclass=abc.ABCMeta):
     _PREFERRED_ALGORITHMS = ("sha256",)
+
+    def __init__(self, *, version_counter: int = 0) -> None:
+        self.version_counter: int = version_counter
 
     @property
     @abc.abstractmethod
@@ -32,8 +36,15 @@ class DebInfo(metaclass=abc.ABCMeta):
     def to_dict(self) -> DebInfoDict:
         return {
             "version": self.version,
+            "version_counter": self.version_counter,
             "hashes": self.hashes,
         }
+
+    @property
+    def repo_version(self) -> str:
+        if not self.version_counter:
+            return self.version
+        return f"{self.version}-0gemfury{self.version_counter}"
 
     def verify_hashes(self, hashes: dict[str, str]) -> bool:
         for algorithm in self._PREFERRED_ALGORITHMS:
@@ -68,7 +79,10 @@ class EmptyDebInfo(DebInfo):
 
 
 class StaticDebInfo(DebInfo):
-    def __init__(self, *, version: str, hashes: dict[str, str]) -> None:
+    def __init__(
+        self, *, version: str, version_counter: int = 0, hashes: dict[str, str]
+    ) -> None:
+        super().__init__(version_counter=version_counter)
         self._version = version
         self._hashes = hashes
 
@@ -76,6 +90,7 @@ class StaticDebInfo(DebInfo):
     def from_dict(cls, data: DebInfoDict) -> Self:
         return cls(
             version=data["version"],
+            version_counter=data["version_counter"],
             hashes=data["hashes"],
         )
 
@@ -90,6 +105,7 @@ class StaticDebInfo(DebInfo):
 
 class DebFile(DebInfo):
     def __init__(self, path: str) -> None:
+        super().__init__()
         self.path = path
 
     @functools.cached_property

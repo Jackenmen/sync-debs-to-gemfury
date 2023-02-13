@@ -70,7 +70,19 @@ class App:
 
             previous_deb_info = package.get_previous_deb_info()
             if package.deb_file.version == previous_deb_info.version:
-                continue
+                if package.deb_file.verify_hashes(previous_deb_info.hashes):
+                    continue
+                package.deb_file.version_counter = previous_deb_info.version_counter + 1
+                subprocess.check_call(
+                    (
+                        "fakeroot",
+                        sys.executable,
+                        "-m",
+                        "sync_debs_to_gemfury.deb_reversion",
+                        package.deb_file.path,
+                        package.deb_file.repo_version,
+                    )
+                )
 
             try:
                 package.push_to_gemfury(
