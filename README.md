@@ -91,12 +91,13 @@ Available options:
 ### `github_release`
 
 This download type can be used for packages that are uploaded as part of a GitHub release.
-It gets the latest stable release and finds the .deb file using provided asset name pattern.
+It gets the latest release and finds the .deb file using provided asset name pattern.
 
 Available options:
 
 - `repository` - repository owner and name in a format: `owner/name`
 - `asset_name_pattern` - regex pattern for the names of assets that are relevant .deb files
+- `tag` - exact name of the tag to fetch to get the latest release; latest stable release is used when this is not specified
 
 ## License
 

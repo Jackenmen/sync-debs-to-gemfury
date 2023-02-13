@@ -4,16 +4,21 @@ import requests
 
 from ..base_package import Package
 
-RELEASES_URL = "https://api.github.com/repos/{repository}/releases/latest"
+RELEASES_URL = "https://api.github.com/repos/{repository}/releases/"
 
 
 class GitHubReleasePackage(Package):
     def __init__(self, name: str, config: dict[str, str]) -> None:
         super().__init__(name, config)
         self._asset_name_pattern = re.compile(config["asset_name_pattern"])
+        self._url = RELEASES_URL.format(repository=config["repository"])
+        if tag := config.get("tag", ""):
+            self._url += f"tags/{tag}"
+        else:
+            self._url += "latest"
 
     def download_deb(self) -> None:
-        resp = requests.get(RELEASES_URL.format(repository=self._config["repository"]))
+        resp = requests.get(self._url)
         resp.raise_for_status()
         release_data = resp.json()
         valid_assets = []
