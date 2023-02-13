@@ -1,28 +1,60 @@
 import abc
 import functools
+import hashlib
+import hmac
 import importlib
 import json
 import os
 import subprocess
-from typing import Protocol, Self, TypedDict, runtime_checkable
+from typing import NoReturn, Protocol, Self, TypedDict, runtime_checkable
 
 import requests
 
 
 class DebInfoDict(TypedDict):
     version: str
+    hashes: dict[str, str]
 
 
 class DebInfo(metaclass=abc.ABCMeta):
+    _PREFERRED_ALGORITHMS = ("sha256",)
+
     @property
     @abc.abstractmethod
     def version(self) -> str:
         raise NotImplementedError()
 
+    @property
+    @abc.abstractmethod
+    def hashes(self) -> dict[str, str]:
+        raise NotImplementedError()
+
     def to_dict(self) -> DebInfoDict:
         return {
             "version": self.version,
+            "hashes": self.hashes,
         }
+
+    def verify_hashes(self, hashes: dict[str, str]) -> bool:
+        for algorithm in self._PREFERRED_ALGORITHMS:
+            try:
+                a = self.hashes[algorithm]
+                b = hashes[algorithm]
+            except KeyError:
+                continue
+            else:
+                return hmac.compare_digest(a, b)
+
+        for algorithm in self.hashes.keys() & hashes.keys():
+            try:
+                a = self.hashes[algorithm]
+                b = hashes[algorithm]
+            except KeyError:
+                continue
+            else:
+                return hmac.compare_digest(a, b)
+
+        raise RuntimeError("No matching hashes were found.")
 
 
 class EmptyDebInfo(DebInfo):
@@ -30,20 +62,30 @@ class EmptyDebInfo(DebInfo):
     def version(self) -> str:
         return ""
 
+    @property
+    def hashes(self) -> NoReturn:
+        raise RuntimeError("Can't access hashes property on an empty deb info.")
+
 
 class StaticDebInfo(DebInfo):
-    def __init__(self, *, version: str) -> None:
+    def __init__(self, *, version: str, hashes: dict[str, str]) -> None:
         self._version = version
+        self._hashes = hashes
 
     @classmethod
     def from_dict(cls, data: DebInfoDict) -> Self:
         return cls(
             version=data["version"],
+            hashes=data["hashes"],
         )
 
     @property
     def version(self) -> str:
         return self._version
+
+    @property
+    def hashes(self) -> dict[str, str]:
+        return self._hashes
 
 
 class DebFile(DebInfo):
@@ -55,6 +97,15 @@ class DebFile(DebInfo):
         return subprocess.check_output(
             ("dpkg-deb", "-f", self.path, "Version"), text=True
         ).strip()
+
+    @functools.cached_property
+    def hashes(self) -> dict[str, str]:
+        ret = {}
+        with open(self.path, "rb") as fp:
+            for algorithm in ("sha256",):
+                fp.seek(0)
+                ret[algorithm] = hashlib.file_digest(fp, algorithm).hexdigest()
+        return ret
 
 
 class Package(metaclass=abc.ABCMeta):
