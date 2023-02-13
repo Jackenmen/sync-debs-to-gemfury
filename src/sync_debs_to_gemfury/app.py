@@ -52,7 +52,7 @@ class App:
             self.packages.append(cls(package_name, package_data["config"]))
 
     def _create_directories(self) -> None:
-        for dirname in ("debs", "package_versions"):
+        for dirname in ("debs", "metadata"):
             os.makedirs(dirname, exist_ok=True)
 
     def run(self) -> int:
@@ -68,8 +68,8 @@ class App:
                 self.errored = True
                 continue
 
-            previous_version = package.get_previous_version()
-            if package.deb_file.version == previous_version:
+            previous_deb_info = package.get_previous_deb_info()
+            if package.deb_file.version == previous_deb_info.version:
                 continue
 
             try:
@@ -81,11 +81,11 @@ class App:
                 print(f"{package.name}: {exc}", file=sys.stderr)
                 self.errored = True
                 continue
-            package.save_version()
+            package.save_deb_info()
             self.changed = True
             changed_packages.append(package)
 
-            if not previous_version:
+            if not previous_deb_info.version:
                 requests.post(
                     f"{GITHUB_API_BASE}/repos/{self._github_repository}/issues",
                     headers={"Authorization": f"Bearer {self._github_token}"},
@@ -94,11 +94,7 @@ class App:
 
         if changed_packages:
             subprocess.check_call(
-                (
-                    "git",
-                    "add",
-                    *(f"package_versions/{pkg.name}" for pkg in changed_packages),
-                )
+                ("git", "add", *(f"metadata/{pkg.name}" for pkg in changed_packages))
             )
             subprocess.check_call(
                 (

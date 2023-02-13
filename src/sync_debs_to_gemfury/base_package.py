@@ -1,14 +1,52 @@
 import abc
 import functools
 import importlib
+import json
 import os
 import subprocess
-from typing import Protocol, runtime_checkable
+from typing import Protocol, Self, TypedDict, runtime_checkable
 
 import requests
 
 
-class DebFile:
+class DebInfoDict(TypedDict):
+    version: str
+
+
+class DebInfo(metaclass=abc.ABCMeta):
+    @property
+    @abc.abstractmethod
+    def version(self) -> str:
+        raise NotImplementedError()
+
+    def to_dict(self) -> DebInfoDict:
+        return {
+            "version": self.version,
+        }
+
+
+class EmptyDebInfo(DebInfo):
+    @property
+    def version(self) -> str:
+        return ""
+
+
+class StaticDebInfo(DebInfo):
+    def __init__(self, *, version: str) -> None:
+        self._version = version
+
+    @classmethod
+    def from_dict(cls, data: DebInfoDict) -> Self:
+        return cls(
+            version=data["version"],
+        )
+
+    @property
+    def version(self) -> str:
+        return self._version
+
+
+class DebFile(DebInfo):
     def __init__(self, path: str) -> None:
         self.path = path
 
@@ -29,18 +67,19 @@ class Package(metaclass=abc.ABCMeta):
     def download_deb(self) -> DebFile:
         raise NotImplementedError()
 
-    def get_previous_version(self) -> str:
-        path = os.path.join("package_versions", self.name)
+    def get_previous_deb_info(self) -> DebInfo:
+        path = os.path.join("metadata", self.name)
         try:
             with open(path, encoding="utf-8") as fp:
-                return fp.read().strip()
+                return StaticDebInfo.from_dict(json.load(fp))
         except FileNotFoundError:
-            return ""
+            return EmptyDebInfo()
 
-    def save_version(self) -> None:
-        path = os.path.join("package_versions", self.name)
+    def save_deb_info(self) -> None:
+        path = os.path.join("metadata", self.name)
         with open(path, "w", encoding="utf-8") as fp:
-            fp.write(f"{self.deb_file.version}\n")
+            json.dump(self.deb_file.to_dict(), fp, indent=4)
+            fp.write("\n")
 
     def push_to_gemfury(self, username: str, push_token: str) -> None:
         resp = requests.post(
