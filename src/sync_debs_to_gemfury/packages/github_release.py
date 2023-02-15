@@ -2,14 +2,15 @@ import re
 
 import requests
 
+from ..auth_info import AuthInfo
 from ..base_package import Package
 
 RELEASES_URL = "https://api.github.com/repos/{repository}/releases/"
 
 
 class GitHubReleasePackage(Package):
-    def __init__(self, name: str, config: dict[str, str]) -> None:
-        super().__init__(name, config)
+    def __init__(self, auth_info: AuthInfo, name: str, config: dict[str, str]) -> None:
+        super().__init__(auth_info, name, config)
         self._asset_name_pattern = re.compile(config["asset_name_pattern"])
         self._url = RELEASES_URL.format(repository=config["repository"])
         if tag := config.get("tag", ""):

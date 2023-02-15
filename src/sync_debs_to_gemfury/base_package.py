@@ -10,6 +10,8 @@ from typing import NoReturn, Protocol, Self, TypedDict, runtime_checkable
 
 import requests
 
+from .auth_info import AuthInfo
+
 
 class DebInfoDict(TypedDict):
     version: str
@@ -125,7 +127,8 @@ class DebFile(DebInfo):
 
 
 class Package(metaclass=abc.ABCMeta):
-    def __init__(self, name: str, config: dict[str, str]) -> None:
+    def __init__(self, auth_info: AuthInfo, name: str, config: dict[str, str]) -> None:
+        self._auth_info = auth_info
         self.name = name
         self._config = config
         self.deb_file = DebFile(os.path.join("debs", f"{self.name}.deb"))
@@ -148,11 +151,11 @@ class Package(metaclass=abc.ABCMeta):
             json.dump(self.deb_file.to_dict(), fp, indent=4)
             fp.write("\n")
 
-    def push_to_gemfury(self, username: str, push_token: str) -> None:
+    def push_to_gemfury(self) -> None:
         resp = requests.post(
-            f"https://push.fury.io/{username}/",
+            f"https://push.fury.io/{self._auth_info.gemfury_username}/",
             files={"package": open(self.deb_file.path, "rb")},
-            auth=(push_token, ""),
+            auth=(self._auth_info.gemfury_push_token, ""),
         )
         if resp.status_code == 409:
             return

@@ -5,6 +5,7 @@ from typing import Literal, Self
 
 import requests
 
+from .auth_info import AuthInfo
 from .base_package import Package, get_package_cls
 from .schema import ConfigDict, load
 
@@ -15,16 +16,10 @@ class App:
     def __init__(
         self,
         *,
-        github_repository: str,
-        github_token: str,
-        gemfury_username: str,
-        gemfury_push_token: str,
+        auth_info: AuthInfo,
         config: ConfigDict,
     ) -> None:
-        self._github_repository = github_repository
-        self._github_token = github_token
-        self._gemfury_username = gemfury_username
-        self._gemfury_push_token = gemfury_push_token
+        self._auth_info = auth_info
         self._config = config
         self.packages: list[Package] = []
         self.changed = False
@@ -38,18 +33,14 @@ class App:
 
     @classmethod
     def from_environ(cls) -> Self:
-        return cls(
-            github_repository=os.environ["GITHUB_REPOSITORY"],
-            github_token=os.environ["GITHUB_TOKEN"],
-            gemfury_username=os.environ["GEMFURY_USERNAME"],
-            gemfury_push_token=os.environ["GEMFURY_PUSH_TOKEN"],
-            config=load("config.yaml"),
-        )
+        return cls(auth_info=AuthInfo.from_environ(), config=load("config.yaml"))
 
     def _load_packages(self) -> None:
         for package_name, package_data in self._config["packages"].items():
             cls = get_package_cls(package_data["type"])
-            self.packages.append(cls(package_name, package_data["config"]))
+            self.packages.append(
+                cls(self._auth_info, package_name, package_data["config"])
+            )
 
     def _create_directories(self) -> None:
         for dirname in ("debs", "metadata"):
@@ -85,10 +76,7 @@ class App:
                 )
 
             try:
-                package.push_to_gemfury(
-                    username=self._gemfury_username,
-                    push_token=self._gemfury_push_token,
-                )
+                package.push_to_gemfury()
             except requests.HTTPError as exc:
                 print(f"{package.name}: {exc}", file=sys.stderr)
                 self.errored = True
@@ -99,8 +87,8 @@ class App:
 
             if not previous_deb_info.version:
                 requests.post(
-                    f"{GITHUB_API_BASE}/repos/{self._github_repository}/issues",
-                    headers={"Authorization": f"Bearer {self._github_token}"},
+                    f"{GITHUB_API_BASE}/repos/{self._auth_info.github_repository}/issues",
+                    headers={"Authorization": f"Bearer {self._auth_info.github_token}"},
                     json={"title": f"Make `{package.name}` package public"},
                 )
 
