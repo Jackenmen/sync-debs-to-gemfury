@@ -19,7 +19,10 @@ class GitHubReleasePackage(Package):
             self._url += "latest"
 
     def download_deb(self) -> None:
-        resp = requests.get(self._url)
+        resp = requests.get(
+            self._url,
+            headers={"Authorization": f"Bearer {self._auth_info.github_token}"},
+        )
         resp.raise_for_status()
         release_data = resp.json()
         valid_assets = []
