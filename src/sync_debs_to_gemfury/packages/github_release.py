@@ -18,7 +18,7 @@ class GitHubReleasePackage(Package):
         else:
             self._url += "latest"
 
-    def download_deb(self) -> None:
+    def _download_deb(self) -> None:
         resp = requests.get(
             self._url,
             headers={"Authorization": f"Bearer {self._auth_info.github_token}"},

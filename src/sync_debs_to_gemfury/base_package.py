@@ -14,6 +14,7 @@ from .auth_info import AuthInfo
 
 
 class DebInfoDict(TypedDict):
+    name: str
     version: str
     version_counter: int
     hashes: dict[str, str]
@@ -27,6 +28,11 @@ class DebInfo(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
+    def name(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    @abc.abstractmethod
     def version(self) -> str:
         raise NotImplementedError()
 
@@ -37,6 +43,7 @@ class DebInfo(metaclass=abc.ABCMeta):
 
     def to_dict(self) -> DebInfoDict:
         return {
+            "name": self.name,
             "version": self.version,
             "version_counter": self.version_counter,
             "hashes": self.hashes,
@@ -71,6 +78,14 @@ class DebInfo(metaclass=abc.ABCMeta):
 
 
 class EmptyDebInfo(DebInfo):
+    def __init__(self, name: str) -> None:
+        super().__init__()
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
     @property
     def version(self) -> str:
         return ""
@@ -82,19 +97,30 @@ class EmptyDebInfo(DebInfo):
 
 class StaticDebInfo(DebInfo):
     def __init__(
-        self, *, version: str, version_counter: int = 0, hashes: dict[str, str]
+        self,
+        *,
+        name: str,
+        version: str,
+        version_counter: int = 0,
+        hashes: dict[str, str],
     ) -> None:
         super().__init__(version_counter=version_counter)
+        self._name = name
         self._version = version
         self._hashes = hashes
 
     @classmethod
-    def from_dict(cls, data: DebInfoDict) -> Self:
+    def from_dict(cls, data: DebInfoDict, *, name: str) -> Self:
         return cls(
+            name=data.get("name", name),
             version=data["version"],
             version_counter=data["version_counter"],
             hashes=data["hashes"],
         )
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def version(self) -> str:
@@ -109,6 +135,12 @@ class DebFile(DebInfo):
     def __init__(self, path: str) -> None:
         super().__init__()
         self.path = path
+
+    @functools.cached_property
+    def name(self) -> str:
+        return subprocess.check_output(
+            ("dpkg-deb", "-f", self.path, "Package"), text=True
+        ).strip()
 
     @functools.cached_property
     def version(self) -> str:
@@ -134,16 +166,23 @@ class Package(metaclass=abc.ABCMeta):
         self.deb_file = DebFile(os.path.join("debs", f"{self.name}.deb"))
 
     @abc.abstractmethod
-    def download_deb(self) -> DebFile:
+    def _download_deb(self) -> None:
         raise NotImplementedError()
+
+    def download_deb(self) -> None:
+        self._download_deb()
+        if self.deb_file.name != self.name:
+            raise RuntimeError(
+                f"The actual package name of {self.name!r} is {self.deb_file.name!r}."
+            )
 
     def get_previous_deb_info(self) -> DebInfo:
         path = os.path.join("metadata", self.name)
         try:
             with open(path, encoding="utf-8") as fp:
-                return StaticDebInfo.from_dict(json.load(fp))
+                return StaticDebInfo.from_dict(json.load(fp), name=self.name)
         except FileNotFoundError:
-            return EmptyDebInfo()
+            return EmptyDebInfo(self.name)
 
     def save_deb_info(self) -> None:
         path = os.path.join("metadata", self.name)
