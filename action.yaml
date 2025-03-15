@@ -21,6 +21,7 @@ runs:
 
     - name: Install system dependencies
       run: sudo apt-get install -y devscripts
+      shell: bash
 
     - name: Run the action.
       run: >-
