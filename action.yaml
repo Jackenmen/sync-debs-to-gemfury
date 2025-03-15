@@ -19,6 +19,9 @@ runs:
         python-version: "3.11"
         update-environment: false
 
+    - name: Install system dependencies
+      run: sudo apt-get install -y devscripts
+
     - name: Run the action.
       run: >-
         pipx run
