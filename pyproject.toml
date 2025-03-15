@@ -15,7 +15,7 @@ dynamic = ["version"]
 sync-debs-to-gemfury = "sync_debs_to_gemfury.__main__:main"
 
 [tool.setuptools_scm]
-git_describe_command = "git describe --dirty --tags --long --exclude v[0-9]*"
+git_describe_command = "git describe --dirty --tags --long --exclude v[1-9] --exclude v[1-9][0-9] --exclude v[1-9][0-9][0-9]"
 
 [tool.isort]
 profile = "black"
