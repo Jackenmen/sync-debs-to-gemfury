@@ -20,7 +20,7 @@ runs:
         update-environment: false
 
     - name: Install system dependencies
-      run: sudo apt-get install -y devscripts
+      run: sudo apt-get update && sudo apt-get install -y devscripts
       shell: bash
 
     - name: Run the action.
