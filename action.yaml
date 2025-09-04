@@ -14,7 +14,7 @@ runs:
 
     - name: Setup Python for the action.
       id: python-for-action
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "3.11"
         update-environment: false
