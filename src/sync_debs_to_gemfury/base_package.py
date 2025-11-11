@@ -159,9 +159,17 @@ class DebFile(DebInfo):
 
 
 class Package(metaclass=abc.ABCMeta):
-    def __init__(self, auth_info: AuthInfo, name: str, config: dict[str, str]) -> None:
+    def __init__(
+        self,
+        auth_info: AuthInfo,
+        name: str,
+        *,
+        download_should_fail: bool,
+        config: dict[str, str],
+    ) -> None:
         self._auth_info = auth_info
         self.name = name
+        self.download_should_fail = download_should_fail
         self._config = config
         self.deb_file = DebFile(os.path.join("debs", f"{self.name}.deb"))
 

@@ -39,7 +39,12 @@ class App:
         for package_name, package_data in self._config["packages"].items():
             cls = get_package_cls(package_data["type"])
             self.packages.append(
-                cls(self._auth_info, package_name, package_data["config"])
+                cls(
+                    self._auth_info,
+                    package_name,
+                    download_should_fail=package_data["download_should_fail"],
+                    config=package_data["config"],
+                )
             )
 
     def _create_directories(self) -> None:
@@ -56,6 +61,20 @@ class App:
                 package.download_deb()
             except (RuntimeError, requests.HTTPError) as exc:
                 print(f"{package.name}: {exc}", file=sys.stderr)
+                if package.download_should_fail:
+                    print(
+                        f"{package.name}: Download failure was expected",
+                        file=sys.stderr,
+                    )
+                else:
+                    self.errored = True
+                continue
+
+            if package.download_should_fail:
+                print(
+                    f"{package.name}: Expected download failure but one did not occur",
+                    file=sys.stderr,
+                )
                 self.errored = True
                 continue
 

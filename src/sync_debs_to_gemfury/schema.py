@@ -1,9 +1,18 @@
 import typing
 
-from strictyaml import EmptyDict, Map, MapPattern, Optional, Str, load as yaml_load
+from strictyaml import (
+    Bool,
+    EmptyDict,
+    Map,
+    MapPattern,
+    Optional,
+    Str,
+    load as yaml_load,
+)
 
 PACKAGE_KEYS = {
     "type": Str(),
+    Optional("download_should_fail", default=False): Bool(),
     Optional("config", default={}): EmptyDict() | MapPattern(Str(), Str()),
 }
 
@@ -16,6 +25,7 @@ SCHEMA = Map(
 
 class PackageDict(typing.TypedDict):
     type: str
+    download_should_fail: bool
     config: dict[str, str]
 
 
