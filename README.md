@@ -51,6 +51,12 @@ packages:
     config:
       repository: Heroic-Games-Launcher/HeroicGamesLauncher
       asset_name_pattern: _amd64.deb$
+
+  nix-multi-user:
+    type: html
+    config:
+      url: https://nix-community.github.io/nix-installers/
+      xpath: .//a[starts-with(@href, './nix/x86_64/nix-multi-user-') and ends-with(@href, '.deb')]/@href
 ```
 
 ## Environment variables
@@ -98,6 +104,25 @@ Available options:
 - `repository` - repository owner and name in a format: `owner/name`
 - `asset_name_pattern` - regex pattern for the names of assets that are relevant .deb files
 - `tag` - exact name of the tag to fetch to get the latest release; latest stable release is used when this is not specified
+
+### `html`
+
+This download type can be used when a package's latest .deb file is listed on an HTML page at a static url.
+The download URL is determined using provided XPath expression ran at the root of the HTML document.
+
+Available options:
+
+- `url` - URL to the HTML page that the download URL is listed at.
+- `xpath` - XPath 1.0 expression used to find the download URL.
+  The expression must evaluate to a URL, no automatic lookups are performed on the returned element
+  (i.e. if you want to use "href" attribute of an `<a>` element,
+  you'll probably want your expression to end with `/@href`).
+
+  Relative URLs are automatically joined with `url` to determine the full URL.
+
+In addition to functions defined by the XPath 1.0 W3C Recommendation, the following custom functions are also provided:
+
+- `ends-with(string, string)` - counter-part to XPath 1.0's `starts-with(string, string) => boolean` function
 
 ## License
 

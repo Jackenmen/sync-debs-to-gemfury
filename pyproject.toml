@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sync-debs-to-gemfury"
 dependencies = [
+    "lxml",
     "requests",
     "strictyaml",
 ]
