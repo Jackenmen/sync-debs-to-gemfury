@@ -59,7 +59,7 @@ class App:
         for package in self.packages:
             try:
                 package.download_deb()
-            except (RuntimeError, requests.HTTPError) as exc:
+            except (RuntimeError, requests.RequestException) as exc:
                 print(f"{package.name}: {exc}", file=sys.stderr)
                 if package.download_should_fail:
                     print(
